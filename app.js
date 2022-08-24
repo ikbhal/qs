@@ -23,14 +23,24 @@ io.on("connection", (socket) => {
   interval = setInterval(() => getApiAndEmit(socket), 1000);
   socket.on('start_test', () => {
     console.log("start test command received");
-    // will send question, answer to you soon 
+    // will send question, answer to you soon
+    var n1 = Math.round(Math.random() * 10);
+    var n2 = Math.round(Math.random() * 10) ;
+    var operator = '+';
+    var question  = n1 + " " + operator + " "+ n2 +" ?";
+    var answer = '';
+    switch(operator){
+      case '+': answer = n1+ n2;break;
+      default: answer= n1+n2; break;
+    }
     const response = {
-      q: '3 +2?',
-      a: '20'
+      q: question,
+      a: answer
     }
     // Emitting a new message. Will be consumed by the client
-    // socket.emit("start_test_response", response);
-    socket.emit("FromAPI", "start respon will sennt soon");
+    console.log("start test response: ", response);
+    socket.emit("start_test_response", response);
+    // socket.emit("FromAPI", "start respon will sennt soon");
   })
 
   socket.on('setUsername', function(data){
@@ -60,12 +70,6 @@ const getApiAndEmit = socket => {
   const response = new Date();
   // Emitting a new message. Will be consumed by the client
   socket.emit("FromAPI", response);
-
-  const qres = {
-    q: '3 +2?',
-    a: '20'
-  }
-  socket.emit("start_test_response", qres);
 };
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
