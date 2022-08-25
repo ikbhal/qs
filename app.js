@@ -28,8 +28,11 @@ io.on("connection", (socket) => {
   }
   // interval = setInterval(() => getApiAndEmit(socket), 1000);
   socket.on('start_test', (username) => {
-    console.log("start test command received");
+    console.log("start test command received username:", username);
+    var userNotCreateIntially = false;
     if(!username){
+      userNotCreateIntially= true;
+      console.log("no username sent , generate username ")
       //if user name is not sent, generate username,  send usetSet event also 
       //socket.emit('userSet', username);
       // socket.emit('userSet', {username: data, table });
@@ -39,35 +42,18 @@ io.on("connection", (socket) => {
     }
     // will send question, answer to you soon
     var table = assignQuestion(username);
+    console.log("question table asigned is table:", table);
     
     // socket.emit("start_test_response", qobj);
     if(table) {
-      io.to(table.id).emit('start_test_response', table)
+      if(userNotCreateIntially){
+        socket.join(table.id);
+        socket.emit('userSet', {username, table});
+      }
+      io.to(table.id).emit('start_test_response', {...table, username})
     } else{
       console.log("ERROR **  table not found for username: " , username);
     }
-    // var n1 = Math.round(Math.random() * 10);
-    // var n2 = Math.round(Math.random() * 10) ;
-    // var operator = '+';
-    // var question  = n1 + " " + operator + " "+ n2 +" ?";
-    // var answer = '';
-    // switch(operator){
-    //   case '+': answer = n1+ n2;break;
-    //   default: answer= n1+n2; break;
-    // }
-    // const response = {
-    //   q: question,
-    //   a: answer
-    // }
-
-    // var username = 'u' + users.length;
-    // users.push({username: username, })
-
-    // socket.emit('userSet', {username: data});
-    // Emitting a new message. Will be consumed by the client
-    // console.log("start test response: ", response);
-    // socket.emit("start_test_response", response);
-    // socket.emit("FromAPI", "start respon will sennt soon");
   })
 
   socket.on('test_complete', (data) =>{

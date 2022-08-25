@@ -31,6 +31,7 @@ function removeUserFromTable(username){
     }
 }
 function assignTable( username){
+    console.log("inside assign table username: ", username);
     if(tables.length ==0){
       var tableName = 't' + (tables.length+1);
       var table = {id: tableName, members:[{username}]};
@@ -60,6 +61,7 @@ function assignQuestion(username){
         console.log("username :" , username ," does not exist in tables");
         // why not assign table 
         table = assignTable(username);
+        console.log("** assign talbe for username:", username, " is table: ", table);
         // return null;
     }
     var qobj =null;
@@ -71,10 +73,12 @@ function assignQuestion(username){
         qobj = table.question;
     }
     // return question 
+    console.log("after assign question table:",table);
     return table;
 }
 
 function createQuestion() {
+    console.log("inside createQuestion")
     var n1 = Math.round(Math.random() * 10);
     var n2 = Math.round(Math.random() * 10) ;
     var operator = '+';
@@ -89,6 +93,7 @@ function createQuestion() {
       a: answer
     }
 
+    console.log("qobj:", qobj);
     return qobj;
 }
 //testComplete(username, q, ua, timeout);
@@ -149,15 +154,17 @@ function createUser(users){
     console.log("inside createuser  in users:", users);
 
     var username = generateUserName();
+    console.log("username: ", username);
     var user  = {username};
     users.push(user);
 
+    console.log("user obj:", user);
     return user;
 }
 
 function generateUserName(){
     console.log("inside generateUsername");
-    var username = randomWords({ exactly: 5, join: '-' });
+    var username = randomWords({ exactly: 2, join: '-' });
     return username;
 }
 module.exports = {assignTable, assignQuestion,
