@@ -2,11 +2,14 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require('cors');
+const {assignTable, getTables, assignQuestion, testComplete} = require('./table');
 
 const port = process.env.PORT || 4001;
 const index = require("./routes/index");
 //https://www.tutorialspoint.com/socket.io/socket.io_chat_application.htm
 users = [];
+// tables = [];
+
 const app = express();
 app.use(index);
 app.use(cors());
@@ -20,39 +23,74 @@ io.on("connection", (socket) => {
   if (interval) {
     clearInterval(interval);
   }
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
-  socket.on('start_test', () => {
+  // interval = setInterval(() => getApiAndEmit(socket), 1000);
+  socket.on('start_test', (username) => {
     console.log("start test command received");
     // will send question, answer to you soon
-    var n1 = Math.round(Math.random() * 10);
-    var n2 = Math.round(Math.random() * 10) ;
-    var operator = '+';
-    var question  = n1 + " " + operator + " "+ n2 +" ?";
-    var answer = '';
-    switch(operator){
-      case '+': answer = n1+ n2;break;
-      default: answer= n1+n2; break;
+    var table = assignQuestion(username);
+    
+    // socket.emit("start_test_response", qobj);
+    if(table) {
+      io.to(table.id).emit('start_test_response', table)
+    } else{
+      console.log("ERROR **  table not found for username: " , username);
     }
-    const response = {
-      q: question,
-      a: answer
-    }
+    // var n1 = Math.round(Math.random() * 10);
+    // var n2 = Math.round(Math.random() * 10) ;
+    // var operator = '+';
+    // var question  = n1 + " " + operator + " "+ n2 +" ?";
+    // var answer = '';
+    // switch(operator){
+    //   case '+': answer = n1+ n2;break;
+    //   default: answer= n1+n2; break;
+    // }
+    // const response = {
+    //   q: question,
+    //   a: answer
+    // }
+
+    // var username = 'u' + users.length;
+    // users.push({username: username, })
+
+    // socket.emit('userSet', {username: data});
     // Emitting a new message. Will be consumed by the client
-    console.log("start test response: ", response);
-    socket.emit("start_test_response", response);
+    // console.log("start test response: ", response);
+    // socket.emit("start_test_response", response);
     // socket.emit("FromAPI", "start respon will sennt soon");
   })
 
+  socket.on('test_complete', (data) =>{
+    console.log("inside test_complete event callback data:",data);
+
+    //socket.emit('test_complete', {ua, q, username:name});
+    //socket.emit('test_complete', {timeout:true, q, username:name});
+    var ua = 'ua' in data ? data.ua : '';
+    var timeout = 'timeout' in data ? data.timeout: false;
+    var q = data.q;
+    var username = data.username;
+
+    testComplete(io, socket, username, q, ua, timeout);
+  });
+
   socket.on('setUsername', function(data){
     console.log("inside setUsername");
+    var username = data;
     console.log("users:",users);
     console.log("data:", data);
     var i = users.indexOf(data);
     console.log("i:", i);
     if(users.indexOf(data) <0){
-       users.push(data);
+       users.push({username});
+       
        console.log("emit userset");
-       socket.emit('userSet', {username: data});
+       var table = assignTable(username);
+       socket.join(table.id);
+       socket.emit('userSet', {username: data, table });
+      //  socket.broadcast('member_updated',table);
+      //displays a joined room message to all other room users except that particular user
+      // change event body, or event name, handle recieve side
+      // socket.broadcast.to(table.id).emit("member_updated", table);
+      io.to(table.id).emit('member_updated', table);
     } else {
        console.log("emit user exists");
        console.log("users in exists: ", users);
