@@ -1,9 +1,34 @@
 const e = require("express");
-
+var randomWords = require('random-words');
 var tables = [];
 
 function getTables() {
     return tables;
+}
+
+// when will remove from table -> on loss, or win or time out  todo
+function removeUserFromTable(username){
+    console.log("inside removeUserFromTable username:", username);
+    if(!tables || tables.length === 0) {
+        console.warn("no tables to remove");
+        return;
+    }
+
+    for(var i =0;i<tables.length;i++){
+        var t = tables[i];
+        if(!t || !('members' in t)){
+            continue;
+        } 
+        var mi = t.members.findIndex(m => m.username === username);
+        if(mi !=-1){ //delete member entry from table
+            t.members.splice(mi,1);
+        }
+        // delete table if zero members 
+        if( !t || !('members' in t) || t.members.length ==0){
+            tables.splice(i,1);
+            i--;// note we are deleting current element thats why, length will reduce
+        } 
+    }
 }
 function assignTable( username){
     if(tables.length ==0){
@@ -13,6 +38,8 @@ function assignTable( username){
       return table;
     }
     var tindex = tables.findIndex( t => t.members.length <3);
+
+    // why not assign same table if existing table
     if(tindex !=-1){// found table
       var table = tables[tindex];
       table.members.push({username});
@@ -31,7 +58,9 @@ function assignQuestion(username){
     var table =  getTable(username);
     if(table == null){
         console.log("username :" , username ," does not exist in tables");
-        return null;
+        // why not assign table 
+        table = assignTable(username);
+        // return null;
     }
     var qobj =null;
     // create question for table if not assigned 
@@ -114,4 +143,24 @@ function getTable(username){
 
     return table;
 }
-module.exports = {assignTable, assignQuestion, testComplete, getTables};
+
+// no table assign, only user creation , append to users
+function createUser(users){
+    console.log("inside createuser  in users:", users);
+
+    var username = generateUserName();
+    var user  = {username};
+    users.push(user);
+
+    return user;
+}
+
+function generateUserName(){
+    console.log("inside generateUsername");
+    var username = randomWords({ exactly: 5, join: '-' });
+    return username;
+}
+module.exports = {assignTable, assignQuestion,
+    testComplete, removeUserFromTable, 
+    getTable,
+    getTables, createUser};

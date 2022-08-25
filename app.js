@@ -2,7 +2,10 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require('cors');
-const {assignTable, getTables, assignQuestion, testComplete} = require('./table');
+const {assignTable, getTables, 
+  assignQuestion, testComplete,
+  removeUserFromTable,// not sure where to use , may be in table.js only
+  createUser} = require('./table');
 
 const port = process.env.PORT || 4001;
 const index = require("./routes/index");
@@ -26,6 +29,14 @@ io.on("connection", (socket) => {
   // interval = setInterval(() => getApiAndEmit(socket), 1000);
   socket.on('start_test', (username) => {
     console.log("start test command received");
+    if(!username){
+      //if user name is not sent, generate username,  send usetSet event also 
+      //socket.emit('userSet', username);
+      // socket.emit('userSet', {username: data, table });
+      // generate user  , send only event 
+      var user = createUser(users);
+      username = user.username;
+    }
     // will send question, answer to you soon
     var table = assignQuestion(username);
     
@@ -97,6 +108,27 @@ io.on("connection", (socket) => {
        socket.emit('userExists', data + ' username is taken! Try some other username.');
    }
  });
+
+  socket.on('leave_table', (data)=>{
+    console.log('leave_table event server callback data:',data);
+    var username = data.username;
+    removeUserFromTable(username);
+    // TODO intimate other table members
+    var table = getTable(username);
+    if(table){ // if table exist
+      io.to(table.id).emit('leave_table_response', {message:"left table", username})
+    }
+    // TODO handle at front end  leave_table_reesponse
+    // socket.emit('leave_table_response', {message:"left table", username});
+  });
+//  const leaveTable = () =>{
+//   console.log("inside leave table");
+//   socket.emit('leave_table', {username:name});
+// }
+
+// const leaveAndJoinNewTable = () =>{
+//   socket.emit('leave_and_join_new_table', {username: name});
+// }
 
   socket.on("disconnect", () => {
     console.log("Client disconnected");
